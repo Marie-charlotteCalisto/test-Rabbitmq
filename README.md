@@ -31,3 +31,5 @@ To run the two exe :
 ./amqpcpp1
 ./amqpcpp2
 ```
+
+https://stackoverflow.com/questions/41805270/rabbitmq-c-client-not-connecting-to-rabbitmq-server-at-5672-port
