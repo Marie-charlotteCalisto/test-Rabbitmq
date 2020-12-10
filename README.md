@@ -2,6 +2,9 @@
 Projet Test Rabbitmq with lib AMQP-CPP.\
 Make connection and messages exchange between 2 executable.
 
+
+http://www.lib4dev.in/info/CopernicaMarketingSoftware/AMQP-CPP/15631079
+
 Download AMQP-CPP lib from https://github.com/CopernicaMarketingSoftware/AMQP-CPP
 
 To install the lib on linux or on windows (see link above), this line :
