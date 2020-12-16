@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/amqpcpp_libev_example.dir/libev.cpp.o -o amqpcpp_libev_example  -lamqpcpp -lev -lpthread -ldl -lssl 

@@ -2,6 +2,43 @@
 
 class MyConnectionHandler : public AMQP::ConnectionHandler
 {
+
+	/**
+	 *  When the connection is being set up, the client and server exchange
+	 *  some information. This includes for example their name and version, 
+	 *  copyright statement and the operating system name. Nothing in this 
+	 *  exchange of information is very relevant for the actual AMQP protocol, 
+	 *  but by overriding this method you can read out the information that 
+	 *  was sent by the server, and you can decide which information you 
+	 *  want to send back that describe the client. In RabbitMQ's management 
+	 *  console the client-properties are visible on the "connections" tab, 
+	 *  which could be helpful in certain scenarios, like debugging.
+	 * 
+	 *  The read-only "server" parameter contains the information sent by 
+	 *  the server, while the "client" table may be filled with information
+	 *  about your application. The AMQP protocol says that this table should
+	 *  at least be filled with data for the "product", "version", "platform", 
+	 *  "copyright" and "information" keys. However, you do not have to 
+	 *  override this method, and even when you do, you do not have to ensure 
+	 *  that these properties are indeed set, because the AMQP-CPP library 
+	 *  takes care of filling in properties that were not explicitly set.
+	 * 
+	 *  @param  connection      The connection about which information is exchanged
+	 *  @param  server          Properties sent by the server
+	 *  @param  client          Properties that are to be sent back
+	 */
+	virtual void onProperties(AMQP::Connection *connection, const AMQP::Table &server, AMQP::Table &client) override
+	{
+		std::cout << "connection ready onProperties ? : "<< (connection->ready()? "true" : "false") << std::endl;
+		std::cout << "server : ";
+		server.output(std::cout);
+		std::cout << "\nclient : ";
+		client.output(std::cout);
+		std::cout << std::endl;
+	}
+
+
+
 	/**
 	 *  Method that is called by the AMQP library every time it has data
 	 *  available that should be sent to RabbitMQ.

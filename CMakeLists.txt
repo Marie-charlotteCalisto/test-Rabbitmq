@@ -6,15 +6,21 @@ project(PocRabbitmq)
 Set(SOURCES src/parse.cpp)
 
 ##### exe #####
-add_executable(amqpcpp1 src/exe1.cpp ${SOURCES})
-add_executable(amqpcpp2 src/exe2.cpp ${SOURCES})
+#add_executable(amqpcpp1 exemple/Test1NoTCP.cpp ${SOURCES})
+#add_executable(amqpcpp2 exemple/Test2NoTCP.cpp ${SOURCES})
+add_executable(sendTCP src/sendfirst.cpp)
+add_executable(respondTCP src/respond.cpp)
 
 
 #### lib ####
-target_link_libraries(amqpcpp1 amqpcpp)
-target_link_libraries(amqpcpp2 amqpcpp)
+#target_link_libraries(amqpcpp1 amqpcpp ev pthread dl ssl)
+#target_link_libraries(amqpcpp2 amqpcpp)
+target_link_libraries(sendTCP amqpcpp ev pthread dl ssl)
+target_link_libraries(respondTCP amqpcpp ev pthread dl ssl)
 
 
 #### dir ####
-target_include_directories(amqpcpp1 PRIVATE include)
-target_include_directories(amqpcpp2 PRIVATE include)
+#target_include_directories(amqpcpp1 PRIVATE include)
+#target_include_directories(amqpcpp2 PRIVATE include)
+target_include_directories(sendTCP PRIVATE include)
+target_include_directories(respondTCP PRIVATE include)

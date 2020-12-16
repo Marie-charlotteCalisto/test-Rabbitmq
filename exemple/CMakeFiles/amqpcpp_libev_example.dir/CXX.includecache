@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/macha/Folder/rabbitmq/PocRabbitmq/exemple/libev.cpp
+ev.h
+-
+amqpcpp.h
+-
+amqpcpp/libev.h
+-
+openssl/ssl.h
+-
+openssl/opensslv.h
+-
+

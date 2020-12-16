@@ -1,0 +1,3 @@
+/home/macha/Folder/rabbitmq/PocRabbitmq/exemple/CMakeFiles/rebuild_cache.dir
+/home/macha/Folder/rabbitmq/PocRabbitmq/exemple/CMakeFiles/edit_cache.dir
+/home/macha/Folder/rabbitmq/PocRabbitmq/exemple/CMakeFiles/amqpcpp_libev_example.dir

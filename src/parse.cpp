@@ -1,5 +1,6 @@
 #include <amqpcpp.h>
 
+////////////////Is implemented in the connection.h file on AMQP ===> use it in ConnectionHandler??/////
 /**
  *  Parse data that was received from RabbitMQ
  *
