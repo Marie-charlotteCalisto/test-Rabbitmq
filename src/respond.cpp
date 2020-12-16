@@ -4,27 +4,30 @@
 
 int main()
 {
+	//create handler with loop
 	auto *loop = EV_DEFAULT;
 
 	AMQP::LibEvHandler myhandler(loop);
 
+	//connection
 	AMQP::Address adress("amqp://guest:guest@localhost/");
-
 	AMQP::TcpConnection connection(&myhandler, adress);
 
+	//channel
 	AMQP::TcpChannel channel(&connection);
-AMQP::Table arguments;
-arguments["x-message-ttl"] = 120 * 1000;
 
-// declare the queue
-channel.declareQueue("my-queue", AMQP::durable + AMQP::passive, arguments);
+
+	// declare the queue
+	AMQP::Table arguments;
+	arguments["x-message-ttl"] = 120 * 1000;
+	channel.declareQueue("my-queue", AMQP::durable + AMQP::passive, arguments);
 
 	// Define callbacks and start
 	auto messageCb = [&channel](
 			const AMQP::Message &message, uint64_t deliveryTag, 
 			bool redelivered)
 	{
-		std::cout << "message received" << std::endl;
+		std::cout << "message received :\"" << message.body() << "\"" << std::endl;
 		// acknowledge the message
 		channel.ack(deliveryTag);
 		//processMessage(message.routingkey(), message.body());
