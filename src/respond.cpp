@@ -17,20 +17,29 @@ int main()
 	AMQP::TcpChannel channel(&connection);
 
 
-	// declare the queue
-	AMQP::Table arguments;
-	arguments["x-message-ttl"] = 120 * 1000;
-	channel.declareQueue("my-queue", AMQP::durable + AMQP::passive, arguments);
+	channel.declareQueue("my-queue", AMQP::durable + AMQP::passive);
+
+	channel.declareExchange("my-response", AMQP::direct);
+	channel.bindQueue("my-response", "my-queue", "second")
+		.onSuccess([]()
+				{
+				std::cout << "binded"<< std::endl;
+                               });
 
 	// Define callbacks and start
 	auto messageCb = [&channel](
 			const AMQP::Message &message, uint64_t deliveryTag, 
 			bool redelivered)
 	{
-		std::cout << "message received :\"" << message.body() << "\"" << std::endl;
-		// acknowledge the message
-		channel.ack(deliveryTag);
-		//processMessage(message.routingkey(), message.body());
+		if (message.routingkey().compare("first") == 0)
+		{
+			std::cout << "message received :\"" << message.body() << "\"" << std::endl;
+			// acknowledge the message
+			channel.ack(deliveryTag);
+			//processMessage(message.routingkey(), message.body());
+
+			channel.publish("my-response", "second", "hello you");
+		}
 	};
 
 	// callback function that is called when the consume operation starts

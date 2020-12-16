@@ -9,39 +9,61 @@ int main()
 	AMQP::LibEvHandler myhandler(loop);
 
 	AMQP::Address adress("amqp://guest:guest@localhost/");
-
 	AMQP::TcpConnection connection(&myhandler, adress);
+
 
 	AMQP::TcpChannel channel(&connection);
 
-	channel.declareExchange("my-exchange", AMQP::direct);
-	channel.declareQueue("my-queue")
+	channel.declareQueue("my-queue", AMQP::durable + AMQP::passive)
 		.onSuccess([]()
 				{
 				std::cout << "queue declared : my-queue" << std::endl;
 
 				});
 
+	channel.declareExchange("my-exchange", AMQP::direct);
+	channel.bindQueue("my-exchange", "my-queue", "first")
+               .onSuccess([]()
+                               {
+                               std::cout << "binded"<< std::endl;
+                               });
 
-	channel.bindQueue("my-exchange", "my-queue", "my-key")
-		.onSuccess([]()
-				{
-				std::cout << "binded"<< std::endl;
-				});
-	channel.publish("my-exchange", "my-key", "hello world");
-/*				
-	channel.consume("my-exchange");
+	channel.publish("my-exchange", "first", "hello world");
 
-	channel.get("my-exchange")
-		.onSuccess([](const AMQP::Message &message, uint64_t deliveryTag, bool redelivered)
-				{
-				std::cout << "Message feteched" << std::endl;
-				})
-	.onEmpty([]()
-			{
-			std::cout << "queue is empty" << std::endl;
-			});
-*/
+	// Define callbacks and start
+	auto messageCb = [&channel](
+			const AMQP::Message &message, uint64_t deliveryTag, 
+			bool redelivered)
+	{
+		if (message.routingkey().compare("second") == 0)
+		{
+			std::cout << "message received :\"" << message.body() << "\"" << std::endl;
+			// acknowledge the message
+			channel.ack(deliveryTag);
+			//processMessage(message.routingkey(), message.body());
+
+			channel.publish("my-exchange", "first", "hello world");
+		}
+	};
+
+	// callback function that is called when the consume operation starts
+	auto startCb = [](const std::string &consumertag) {
+
+		std::cout << "consume operation started: " << consumertag << std::endl;
+	};
+
+	// callback function that is called when the consume operation failed
+	auto errorCb = [](const char *message) {
+
+		std::cout << "consume operation failed" << std::endl;
+	};
+
+	channel.consume("my-queue")
+		.onReceived(messageCb)
+		.onSuccess(startCb)
+		.onError(errorCb);
+
+
 	ev_run(loop, 0);
 
 	return 0;
