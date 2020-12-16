@@ -8,8 +8,14 @@ Set(SOURCES src/parse.cpp)
 ##### exe #####
 #add_executable(amqpcpp1 exemple/Test1NoTCP.cpp ${SOURCES})
 #add_executable(amqpcpp2 exemple/Test2NoTCP.cpp ${SOURCES})
-add_executable(sendTCP src/sendfirst.cpp)
-add_executable(respondTCP src/respond.cpp)
+
+
+
+#add_executable(sendTCP src/samequeuefrist.cpp)
+#add_executable(respondTCP src/samequeueSecond.cpp)
+add_executable(sendTCP src/diffqueuefirst.cpp)
+add_executable(respondTCP src/diffqueueSecond.cpp)
+
 
 
 #### lib ####
