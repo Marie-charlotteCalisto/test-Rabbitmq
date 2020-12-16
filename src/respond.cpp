@@ -16,11 +16,12 @@ int main()
 	//channel
 	AMQP::TcpChannel channel(&connection);
 
+AMQP::Table arguments;
+arguments["x-message-ttl"] = 120 * 1000;
+	channel.declareQueue("my-queue", AMQP::durable + AMQP::passive,arguments);
 
-	channel.declareQueue("my-queue", AMQP::durable + AMQP::passive);
-
-	channel.declareExchange("my-response", AMQP::direct);
-	channel.bindQueue("my-response", "my-queue", "second")
+	channel.declareExchange("my-exchange", AMQP::direct);
+	channel.bindQueue("my-exchange", "my-queue", "second")
 		.onSuccess([]()
 				{
 				std::cout << "binded"<< std::endl;
@@ -38,7 +39,10 @@ int main()
 			channel.ack(deliveryTag);
 			//processMessage(message.routingkey(), message.body());
 
-			channel.publish("my-response", "second", "hello you");
+			channel.publish("my-exchange", "second", "hello you");
+		}
+		else{
+			std::cout << "humm" << std::endl;
 		}
 	};
 

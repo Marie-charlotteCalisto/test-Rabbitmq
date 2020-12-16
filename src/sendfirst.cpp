@@ -13,8 +13,9 @@ int main()
 
 
 	AMQP::TcpChannel channel(&connection);
-
-	channel.declareQueue("my-queue", AMQP::durable + AMQP::passive)
+AMQP::Table arguments;
+arguments["x-message-ttl"] = 120 * 1000;
+	channel.declareQueue("my-queue", AMQP::direct, arguments)
 		.onSuccess([]()
 				{
 				std::cout << "queue declared : my-queue" << std::endl;
@@ -43,6 +44,9 @@ int main()
 			//processMessage(message.routingkey(), message.body());
 
 			channel.publish("my-exchange", "first", "hello world");
+		}
+		else{
+			std::cout << "humm " << std::endl;
 		}
 	};
 
