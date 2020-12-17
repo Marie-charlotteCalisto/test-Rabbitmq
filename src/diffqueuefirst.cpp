@@ -2,47 +2,57 @@
 #include <amqpcpp/libev.h>
 #include <ev.h>
 #include <unistd.h>
+
 int main()
 {
+	//create handler with loop event
 	auto *loop = EV_DEFAULT;
 
 	AMQP::LibEvHandler myhandler(loop);
 
+	//connection
 	AMQP::Address adress("amqp://guest:guest@localhost/");
 	AMQP::TcpConnection connection(&myhandler, adress);
 
 
+	//channel
 	AMQP::TcpChannel channel(&connection);
-AMQP::Table arguments;
-arguments["x-message-ttl"] = 120 * 1000;
+
+	//queue
+	AMQP::Table arguments;
+	arguments["x-message-ttl"] = 120 * 1000;
 	channel.declareQueue("first-queue", AMQP::durable + AMQP::passive, arguments)
 		.onSuccess([]()
 				{
-				std::cout << "queue declared : my-queue" << std::endl;
+				std::cout << "queue declared" << std::endl;
 
 				});
 
+	//exchange
 	channel.declareExchange("my-exchange", AMQP::direct);
-	channel.bindQueue("my-exchange", "second-queue", "first")
-               .onSuccess([]()
-                               {
-                               std::cout << "binded"<< std::endl;
-                               });
+	channel.bindQueue("my-exchange", "first-queue", "first")
+		.onSuccess([]()
+				{
+				std::cout << "binded"<< std::endl;
+				});
 
-	channel.publish("my-exchange", "first", "hello world");
+	//publish first message to begin conversation
+	channel.publish("my-exchange", "first", "0");
 
 	// Define callbacks and start
 	auto messageCb = [&channel](
 			const AMQP::Message &message, uint64_t deliveryTag, 
 			bool redelivered)
 	{
-			std::cout << "message received :\"" << message.body() << "\"" << std::endl;
-			// acknowledge the message
-			channel.ack(deliveryTag);
-			//processMessage(message.routingkey(), message.body());
+		auto messageS = std::stoi(std::string(message.body(), message.body() + message.bodySize())) + 1;
 
-			usleep(1000000);
-			channel.publish("my-exchange", "first", "hello world");
+		std::cout << "message received :\"" << messageS << "\"" << std::endl;
+		// acknowledge the message
+		channel.ack(deliveryTag);
+		//processMessage(message.routingkey(), message.body());
+
+		usleep(1000000);
+		channel.publish("my-exchange", "second", std::to_string(messageS));
 	};
 
 	// callback function that is called when the consume operation starts
@@ -57,7 +67,7 @@ arguments["x-message-ttl"] = 120 * 1000;
 		std::cout << "consume operation failed" << std::endl;
 	};
 
-	channel.consume("first-queue")
+	channel.consume("second-queue")
 		.onReceived(messageCb)
 		.onSuccess(startCb)
 		.onError(errorCb);
