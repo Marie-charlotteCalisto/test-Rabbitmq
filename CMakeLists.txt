@@ -15,6 +15,7 @@ Set(SOURCES src/parse.cpp)
 #add_executable(respondTCP src/samequeueSecond.cpp)
 add_executable(sendTCP src/diffqueuefirst.cpp)
 add_executable(respondTCP src/diffqueueSecond.cpp)
+add_executable(superviserTCP src/superviser.cpp)
 
 
 
@@ -23,10 +24,11 @@ add_executable(respondTCP src/diffqueueSecond.cpp)
 #target_link_libraries(amqpcpp2 amqpcpp)
 target_link_libraries(sendTCP amqpcpp ev pthread dl ssl)
 target_link_libraries(respondTCP amqpcpp ev pthread dl ssl)
+target_link_libraries(superviserTCP amqpcpp ev pthread dl ssl)
 
 
 #### dir ####
 #target_include_directories(amqpcpp1 PRIVATE include)
 #target_include_directories(amqpcpp2 PRIVATE include)
-target_include_directories(sendTCP PRIVATE include)
-target_include_directories(respondTCP PRIVATE include)
+#target_include_directories(sendTCP PRIVATE include)
+#target_include_directories(respondTCP PRIVATE include)
