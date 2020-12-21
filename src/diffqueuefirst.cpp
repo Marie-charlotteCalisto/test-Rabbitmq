@@ -17,62 +17,29 @@ int main()
 
 	//channel
 	AMQP::TcpChannel channel(&connection);
+	channel.setQos(1);
 
-	//queue
-	AMQP::Table arguments;
-	arguments["x-message-ttl"] = 120 * 1000;
-	channel.declareQueue("first-queue")//, AMQP::passive + AMQP::durable, arguments)
-		.onSuccess([]()
-				{
-				std::cout << "queue declared" << std::endl;
+	channel.declareQueue("rpc_queue");
 
-				});
-
-	//exchange
-	channel.declareExchange("my-exchange", AMQP::direct);
-	channel.bindQueue("my-exchange", "first-queue", "first")
-		.onSuccess([]()
-				{
-				std::cout << "binded"<< std::endl;
-				});
-
-	//publish first message to begin conversation
-	channel.publish("my-exchange", "first", "0");
-
-	// Define callbacks and start
-	auto messageCb = [&channel](
-			const AMQP::Message &message, uint64_t deliveryTag, 
+	auto callback = [&channel](const AMQP::Message &message,
+			uint64_t deliveryTag,
 			bool redelivered)
 	{
-		auto messageS = std::stoi(std::string(message.body(), message.body() + message.bodySize())) + 1;
+		const auto body = std::string(message.body(), message.body() + message.bodySize());
+		//const auto response = std::to_string(std::stoi(body) + 1);
 
-		std::cout << "message received :\"" << messageS << "\"" << std::endl;
-		// acknowledge the message
-		channel.ack(deliveryTag);
-		//processMessage(message.routingkey(), message.body());
+	//	const auto response = std::string(message.body());
+		std::cout<< "message : " << body <<std::endl;
 
-		usleep(1000000);
-		channel.publish("my-exchange", "first", std::to_string(messageS));
+		AMQP::Message env(message.exchange(), "first");
+		env.setCorrelationID(message.correlationID());
+
+		channel.publish("", message.replyTo(), env);
 	};
 
-	// callback function that is called when the consume operation starts
-	auto startCb = [](const std::string &consumertag) {
-
-		std::cout << "consume operation started: " << consumertag << std::endl;
-	};
-
-	// callback function that is called when the consume operation failed
-	auto errorCb = [](const char *message) {
-
-		std::cout << "consume operation failed" << std::endl;
-	};
-
-	channel.consume("second-queue")
-		.onReceived(messageCb)
-		.onSuccess(startCb)
-		.onError(errorCb);
-
-
+	channel.consume("", AMQP::noack)
+		.onReceived(callback);
+	std::cout << " [x] Awaiting RPC requests" << std::endl;
 	ev_run(loop, 0);
 
 	return 0;
