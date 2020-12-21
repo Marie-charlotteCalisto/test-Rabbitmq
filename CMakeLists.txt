@@ -13,18 +13,20 @@ Set(SOURCES src/parse.cpp)
 
 #add_executable(sendTCP src/samequeuefrist.cpp)
 #add_executable(respondTCP src/samequeueSecond.cpp)
-add_executable(sendTCP src/diffqueuefirst.cpp)
-add_executable(respondTCP src/diffqueueSecond.cpp)
-add_executable(superviserTCP src/superviser.cpp)
+#add_executable(superviserTCP src/superviser.cpp)
+add_executable(client1 src/client1.cpp)
+add_executable(client2 src/client2.cpp)
+add_executable(server src/server.cpp)
 
 
 
 #### lib ####
 #target_link_libraries(amqpcpp1 amqpcpp ev pthread dl ssl)
 #target_link_libraries(amqpcpp2 amqpcpp)
-target_link_libraries(sendTCP amqpcpp ev pthread dl ssl)
-target_link_libraries(respondTCP amqpcpp ev pthread dl ssl)
-target_link_libraries(superviserTCP amqpcpp ev pthread dl ssl)
+#target_link_libraries(superviserTCP amqpcpp ev pthread dl ssl)
+target_link_libraries(server amqpcpp ev pthread dl ssl)
+target_link_libraries(client1 amqpcpp ev pthread dl ssl)
+target_link_libraries(client2 amqpcpp ev pthread dl ssl)
 
 
 #### dir ####

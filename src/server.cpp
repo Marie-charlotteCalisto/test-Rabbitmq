@@ -26,12 +26,10 @@ int main()
 			bool redelivered)
 	{
 		const auto body = std::string(message.body(), message.body() + message.bodySize());
-		//const auto response = std::to_string(std::stoi(body) + 1);
 
-	//	const auto response = std::string(message.body());
 		std::cout<< "message : " << body <<std::endl;
 
-		AMQP::Message env(message.exchange(), "first");
+		AMQP::Envelope env(body.c_str(), message.bodySize());
 		env.setCorrelationID(message.correlationID());
 
 		channel.publish("", message.replyTo(), env);

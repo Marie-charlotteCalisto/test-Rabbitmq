@@ -17,6 +17,8 @@ int main()
 	AMQP::Address adress("amqp://guest:guest@localhost/");
 	AMQP::TcpConnection connection(&myhandler, adress);
 
+	
+
 	//channel
 	AMQP::TcpChannel channel(&connection);
 
@@ -24,14 +26,14 @@ int main()
 			int msgcount,
 			int consumercount)
 	{
-		AMQP::Message env("talk", "first");
-		env.setCorrelationID(correlation);
+		AMQP::Envelope env("0", 1);
+		env.setCorrelationID("2");
 		env.setReplyTo(name);
 		channel.publish("","rpc_queue", env);
-		std::cout<<" [x] Request "<<std::endl;
+		std::cout<<" [x] Send 0"<<std::endl;
 
 	};
-	channel.declareQueue(AMQP::exclusive).onSuccess(callback);
+	channel.declareQueue("talk").onSuccess(callback);
 
 	auto receiveCallback = [&](const AMQP::Message &message,
 			uint64_t deliveryTag,
@@ -40,10 +42,22 @@ int main()
 		if(message.correlationID() != correlation)
 			return;
 
-		std::cout<<" [.] Got "<<message.body()<<std::endl;
+
+//		const auto body = std::string(message.body(), message.body() + message.bodySize());
+	//	const char *response = std::to_string(std::stoi(body) + 1).c_str();
+
+		usleep(1000000);
+		std::cout<<" [.] Got "<< message.body() <<std::endl;
+	//	std::cout<<" [.] responded "<< response <<std::endl;
+		channel.ack(deliveryTag);
+
+		AMQP::Envelope env(message.body(),message.bodySize());
+		env.setCorrelationID("2");
+		env.setReplyTo("talk");
+		channel.publish("","rpc_queue", env);
 	};
 
-	channel.consume("", AMQP::noack)
+	channel.consume("")
 		.onReceived(receiveCallback);
 
 	ev_run(loop, 0);
