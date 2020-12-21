@@ -20,7 +20,7 @@ int main()
 	//queue
 	AMQP::Table arguments;
 	arguments["x-message-ttl"] = 120 * 1000;
-	channel.declareQueue("second-queue", AMQP::durable + AMQP::passive,arguments)
+	channel.declareQueue("second-queue")//, AMQP::passive + AMQP::durable, arguments)
 		.onSuccess([]()
 				{
 				std::cout << "queue declared" << std::endl;

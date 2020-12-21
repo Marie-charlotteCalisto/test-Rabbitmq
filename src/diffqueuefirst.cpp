@@ -21,7 +21,7 @@ int main()
 	//queue
 	AMQP::Table arguments;
 	arguments["x-message-ttl"] = 120 * 1000;
-	channel.declareQueue("first-queue", AMQP::durable + AMQP::passive, arguments)
+	channel.declareQueue("first-queue")//, AMQP::passive + AMQP::durable, arguments)
 		.onSuccess([]()
 				{
 				std::cout << "queue declared" << std::endl;
@@ -52,7 +52,7 @@ int main()
 		//processMessage(message.routingkey(), message.body());
 
 		usleep(1000000);
-		channel.publish("my-exchange", "second", std::to_string(messageS));
+		channel.publish("my-exchange", "first", std::to_string(messageS));
 	};
 
 	// callback function that is called when the consume operation starts
