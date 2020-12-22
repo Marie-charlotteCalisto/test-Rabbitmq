@@ -17,6 +17,15 @@ int main()
 	//channel
 	AMQP::TcpChannel channel(&connection);
 
+	//queue
+	AMQP::Table arguments;
+	arguments["x-message-ttl"] = 120 * 1000;
+	channel.declareQueue("my-queue")//, AMQP::durable + AMQP::passive, arguments)
+		.onSuccess([]()
+				{
+				std::cout << "queue declared" << std::endl;
+				});
+
 	//exchange
 	channel.declareExchange("my-exchange", AMQP::direct);
 	channel.bindQueue("my-exchange", "my-queue", "second")
@@ -25,6 +34,7 @@ int main()
 				std::cout << "binded"<< std::endl;
 				});
 
+
 	// Define callbacks and start
 	auto messageCb = [&channel](
 			const AMQP::Message &message, uint64_t deliveryTag, 
@@ -32,12 +42,16 @@ int main()
 	{
 		if (message.routingkey() != "second")
 			return;
-		auto messageS = std::stoi(std::string(message.body(), message.body() + message.bodySize())) + 1;
-		std::cout << "message received :\"" << messageS<< "\"" << std::endl;
+
 		// acknowledge the message
 		channel.ack(deliveryTag);
-		//processMessage(message.routingkey(), message.body());
+	
+		//get number sent and add one
+		auto messageS = std::stoi(std::string(message.body(), message.body() + message.bodySize())) + 1;
 
+		std::cout << "message received :\"" << messageS<< "\"" << std::endl;
+
+		//publish after one second
 		usleep(1000000);
 		channel.publish("my-exchange", "first", std::to_string(messageS));
 	};
