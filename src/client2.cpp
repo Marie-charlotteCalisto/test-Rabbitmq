@@ -28,7 +28,7 @@ int main()
 
 	//exchange
 	channel.declareExchange("my-exchange", AMQP::direct);
-	channel.bindQueue("my-exchange", "my-queue", "second")
+	channel.bindQueue("my-exchange", "my-queue", "first")
 		.onSuccess([]()
 				{
 				std::cout << "binded"<< std::endl;
