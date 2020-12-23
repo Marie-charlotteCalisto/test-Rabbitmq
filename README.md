@@ -7,7 +7,7 @@ http://www.lib4dev.in/info/CopernicaMarketingSoftware/AMQP-CPP/15631079
 
 Download AMQP-CPP lib from https://github.com/CopernicaMarketingSoftware/AMQP-CPP
 
-To install the lib on linux or on windows (see link above).
+To install the lib on linux or on windows (see link above). \
 This line :
 ```
 cmake --build . --target install
