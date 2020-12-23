@@ -20,10 +20,10 @@ Mine had to be in path : /usr/ and not /usr/local/\
 This project is compiled on manjaro. It will be different on Windows.\
 On Windows the lib path will have to be set in the Environemnt Variables.
 
-Some of the rabbitmq-plugins must be enable :
-rabbitmq_amqp1_0
-rabbitmq_event_exchange
-rabbitmq_management
+Some of the rabbitmq-plugins must be enable : \
+rabbitmq_amqp1_0 \
+rabbitmq_event_exchange\
+rabbitmq_management\
 ```
 rabbitmq-plugins enable <plugin_name>
 ```
