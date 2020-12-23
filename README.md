@@ -27,8 +27,8 @@ rabbitmq_management
 ```
 rabbitmq-plugins enable <plugin_name>
 ```
-Download the rabbitmqadmin file : https://www.rabbitmq.com/management-cli.html\
-The file must be executable so ``` chmod +x rabbitmqadmin ```
+Download the rabbitmqadmin file : https://www.rabbitmq.com/management-cli.html \
+The file must be executable so ``` chmod +x rabbitmqadmin ``` \
 I needed to change the  as follow : #!/usr/bin/pyton3 instead of #!/usr/bin/env python3\
 And move the exe to /usr/bin/. Here again, this depends on the linux distrubution.
 
