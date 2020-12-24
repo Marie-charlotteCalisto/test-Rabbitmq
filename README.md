@@ -48,5 +48,4 @@ Each executable must be run at the same time so that they can speak to eachother
 The rabbitmqserver must have been started. In a terminal : ``` rabbitmq-server start ``` (might need permissions)
 
 for more http management information (once the server is started): http://localhost:15672/api/index.html \
-or : https://www.programmersought.com/article/16382800932/ \
-
+or : https://www.programmersought.com/article/16382800932/
