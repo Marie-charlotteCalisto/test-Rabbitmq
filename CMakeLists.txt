@@ -8,14 +8,14 @@ project(PocRabbitmq)
 ##### exe #####
 
 
-#add_executable(superviserTCP src/superviser.cpp)
+add_executable(superviser src/superviser.cpp)
 add_executable(client1 src/client1.cpp)
 add_executable(client2 src/client2.cpp)
 
 
 
 #### lib ####
-#target_link_libraries(superviserTCP amqpcpp ev pthread dl ssl)
+target_link_libraries(superviser amqpcpp ev pthread dl ssl curl)
 target_link_libraries(client1 amqpcpp ev pthread dl ssl)
 target_link_libraries(client2 amqpcpp ev pthread dl ssl)
 
