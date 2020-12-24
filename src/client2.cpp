@@ -18,9 +18,7 @@ int main()
 	AMQP::TcpChannel channel(&connection);
 
 	//queue
-	AMQP::Table arguments;
-	arguments["x-message-ttl"] = 120 * 1000;
-	channel.declareQueue("my-queue")//, AMQP::durable + AMQP::passive, arguments)
+	channel.declareQueue("my-queue")
 		.onSuccess([]()
 				{
 				std::cout << "queue declared" << std::endl;
