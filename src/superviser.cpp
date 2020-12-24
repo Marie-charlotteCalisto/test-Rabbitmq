@@ -4,12 +4,16 @@
 #include <json/json.h>
 
 
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+static size_t WriteCallback(
+		const char* in,
+		std::size_t size,
+		std::size_t num,
+		char* out)
 {
-	((std::string*)userp)->append((char*)contents, size * nmemb);
-	return size * nmemb;
+	std::string data(in, (std::size_t) size * num);
+	*((std::stringstream*) out) << data;
+	return size * num;        
 }
-
 
 std::string getNbChannel(CURL *curl)
 {
@@ -17,24 +21,28 @@ std::string getNbChannel(CURL *curl)
 	std::string readBuffer;
 
 	long httpCode(0);
-	std::unique_ptr<std::string> httpData(new std::string());
 
+	std::stringstream httpData;
 
 	curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:15672/api/consumers");
 
 	curl_easy_setopt(curl, CURLOPT_USERPWD, "guest:guest");
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, httpData.get());
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &httpData);
 
 	res = curl_easy_perform(curl);
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
 
-        Json::Value jsonData;
-        Json::Reader jsonReader;
+	if (res == CURLE_OK && httpCode == 200)
+	{
+		Json::Value jsonData;
+		Json::CharReaderBuilder jsonReader;
+		std::string err;
 
-        if (jsonReader.parse(*httpData.get(), jsonData))
-        {
-		return std::to_string(jsonData.size());
+		if (Json::parseFromStream(jsonReader, httpData, &jsonData, &err))
+		{
+			return std::to_string(jsonData.size());
+		}
 	} 
 	return "0";
 
