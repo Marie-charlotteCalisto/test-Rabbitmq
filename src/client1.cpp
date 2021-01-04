@@ -1,3 +1,5 @@
+#include "callbacks.h"
+
 #include <amqpcpp.h>
 #include <amqpcpp/libev.h>
 #include <ev.h>
@@ -20,60 +22,16 @@ int main()
 
 	//queue
 	channel.declareQueue("my-queue")
-		.onSuccess([]()
-				{
-				std::cout << "queue declared" << std::endl;
-				});
+		.onSuccess(queueDeclared);
 
 	//exchange
 	channel.declareExchange("my-exchange", AMQP::direct);
 	channel.bindQueue("my-exchange", "my-queue", "second")
-		.onSuccess([&channel]()
-				{
-				std::cout << "binded"<< std::endl;
+		.onSuccess(bindAndSend(&channel, "second"));
 
-				//publish first message to begin conversation
-				channel.publish("my-exchange", "second", "0");
-				});
-
-
-
-	// Define callbacks and start
-	auto messageCb = [&channel](
-			const AMQP::Message &message, uint64_t deliveryTag, 
-			bool redelivered)
-	{
-		auto key = message.routingkey();
-		if (key != "first")
-			return;
-
-		// acknowledge the message
-		channel.ack(deliveryTag);
-
-		//get number sent and add one
-		auto messageS = std::stoi(std::string(message.body(), message.body() + message.bodySize())) + 1;
-
-		std::cout << "message received from " << message.exchange() << " key " << key << " :\"" << messageS << "\"" << std::endl;
-
-		//publish after one second
-		usleep(1000000);
-		channel.publish("my-exchange", "second", std::to_string(messageS));
-	};
-
-	// callback function that is called when the consume operation starts
-	auto startCb = [](const std::string &consumertag) {
-
-		std::cout << "consume operation started: " << consumertag << std::endl;
-	};
-
-	// callback function that is called when the consume operation failed
-	auto errorCb = [](const char *message) {
-
-		std::cout << "consume operation failed" << std::endl;
-	};
 
 	channel.consume("my-queue")
-		.onReceived(messageCb)
+		.onReceived(AdditionMessage(&channel, "first", "second"))
 		.onSuccess(startCb)
 		.onError(errorCb);
 
