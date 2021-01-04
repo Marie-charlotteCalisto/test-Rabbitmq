@@ -12,12 +12,20 @@ add_executable(superviser src/superviser.cpp)
 add_executable(client1 src/client1.cpp)
 add_executable(client2 src/client2.cpp)
 
+add_executable(client3 src/client3.cpp)
+add_executable(client4 src/client4.cpp)
+
+
 
 
 #### lib ####
 target_link_libraries(superviser amqpcpp ev pthread dl ssl curl jsoncpp)
 target_link_libraries(client1 amqpcpp ev pthread dl ssl)
 target_link_libraries(client2 amqpcpp ev pthread dl ssl)
+
+target_link_libraries(client3 amqpcpp ev pthread dl ssl)
+target_link_libraries(client4 amqpcpp ev pthread dl ssl)
+
 
 
 #### dir ####
