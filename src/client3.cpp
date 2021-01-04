@@ -43,6 +43,7 @@ int main()
 			const AMQP::Message &message, uint64_t deliveryTag, 
 			bool redelivered)
 	{
+		auto key = message.routingkey();
 		if (message.routingkey() != "third")
 			return;
 
@@ -51,8 +52,7 @@ int main()
 
 		//get number sent and add one
 		auto messageS = std::stoi(std::string(message.body(), message.body() + message.bodySize())) + 1;
-
-		std::cout << "message received :\"" << messageS << "\"" << std::endl;
+		std::cout << "message received from " << message.exchange() << " key " << key << " :\"" << messageS<< "\"" << std::endl;
 
 		//publish after one second
 		usleep(1000000);

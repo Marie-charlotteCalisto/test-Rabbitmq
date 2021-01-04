@@ -38,7 +38,9 @@ int main()
 			const AMQP::Message &message, uint64_t deliveryTag, 
 			bool redelivered)
 	{
-		if (message.routingkey() != "forth")
+		auto key = message.routingkey();
+
+		if (key	!= "forth")
 			return;
 
 		// acknowledge the message
@@ -47,7 +49,7 @@ int main()
 		//get number sent and add one
 		auto messageS = std::stoi(std::string(message.body(), message.body() + message.bodySize())) + 1;
 
-		std::cout << "message received :\"" << messageS<< "\"" << std::endl;
+		std::cout << "message received from " << message.exchange() << " key " << key << " :\"" << messageS<< "\"" << std::endl;
 
 		//publish after one second
 		usleep(1000000);
