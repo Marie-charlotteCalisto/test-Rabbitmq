@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 3.19)
 project(PocRabbitmq)
 
 ######## Set Variable ##########
-Set(SOURCES src/callbacks.cpp)
+Set(SOURCES src/callbacks.cpp src/client.cpp)
 
 
 ##### exe #####
-add_executable(superviser src/superviser.cpp)
+add_executable(superviser src/superviser.cpp ${SOURCES})
 
 add_executable(client1 src/client1.cpp ${SOURCES})
 add_executable(client2 src/client2.cpp ${SOURCES})
@@ -30,6 +30,7 @@ target_link_libraries(client4 amqpcpp ev pthread dl ssl)
 
 
 #### dir ####
+target_include_directories(superviser PRIVATE include)
 target_include_directories(client1 PRIVATE include)
 target_include_directories(client2 PRIVATE include)
 
