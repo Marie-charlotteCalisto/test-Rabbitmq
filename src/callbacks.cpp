@@ -17,13 +17,15 @@ const AMQP::MessageCallback AdditionMessage(
 		channel->ack(deliveryTag);
 
 		//get number sent and add one
-		auto messageS = std::stoi(std::string(message.body(), message.body() + message.bodySize())) + 1;
+		auto messageS =
+			std::stoi(std::string(message.body(), message.body() + message.bodySize())) + 1;
 
-		std::cout << "message received from " << message.exchange() << " key " << key << " :\"" << messageS << "\"" << std::endl;
+		std::cout << "message received from " << message.exchange()
+			<< " key " << key << " :\"" << messageS << "\"" << std::endl;
 
 		//publish after one second
-		usleep(1000000);
 		channel->publish("my-exchange", publishkey, std::to_string(messageS));
+		usleep(1000000);
 	};
 };
 
@@ -37,6 +39,7 @@ const AMQP::SuccessCallback bindAndSend(
 
 		//publish first message to begin conversation
 		channel->publish("my-exchange", publishkey, "0");
+		usleep(1000000);
 	};
 };
 
