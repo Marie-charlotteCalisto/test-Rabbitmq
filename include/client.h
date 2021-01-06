@@ -22,7 +22,7 @@ class Client {
 		};
 
 
-		void SendAdditionMessage(AMQP::TcpChannel *channel);
+		void RespondAdditionMessage(AMQP::TcpChannel *channel);
 
 		std::string getExchange() { return exchange;}
 		std::string getRoutingkey() { return routingkey;}
