@@ -79,11 +79,12 @@ void purgeQueue(std::string queueName)
 		curl_easy_setopt(curl, CURLOPT_USERPWD, "guest:guest");
 
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+	
+		//For debug:
+		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-		/* Perform the custom request */ 
+
 		auto res = curl_easy_perform(curl);
-
-		/* Check for errors */ 
 		if(res != CURLE_OK)
 			std::cout << "curl_easy_perform() failed "<< curl_easy_strerror(res) << std::endl;
 		else
@@ -99,6 +100,9 @@ void declareQueue(std::string queue)
 	auto curl = curl_easy_init();
 
 
+	std::string data = "{\"name\":\"" + queue + "\",\
+			\"auto_delete\":\"true\",\
+			\"node\":\"guest@localhost\"}";
 	if (curl)
 	{
 		std::string url = "http://localhost:15672/api/queues/%2F/" + queue;
@@ -108,25 +112,14 @@ void declareQueue(std::string queue)
 
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
 
-		//construct json spec
-		std::stringstream httpData;
-		httpData << "{\"name\":\"" << queue <<"\",\
-			\"auto_delete\":\"true\",\
-			\"node\":\"guest@localhost\"}";
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
+			
+		//For debug:
+		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-		Json::Value json;
-		Json::CharReaderBuilder jsonReader;
-		std::string err;
 
-		Json::parseFromStream(jsonReader, httpData, &json, &err);
-		
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json);
-		
-		
-		/* Perform the custom request */ 
 		auto res = curl_easy_perform(curl);
 
-		/* Check for errors */ 
 		if(res != CURLE_OK)
 			std::cout << res << "curl_easy_perform() failed "<< curl_easy_strerror(res) << std::endl;
 		else
@@ -141,6 +134,7 @@ void declareExchange(std::string exchange, std::string type)
 {
 	auto curl = curl_easy_init();
 
+	std::string data = "{\"name\":\"" + exchange + "\",\"type\":\"" + type + "\"}";
 
 	if (curl)
 	{
@@ -151,40 +145,31 @@ void declareExchange(std::string exchange, std::string type)
 
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
 
-		//construct json spec
-		std::stringstream httpData;
-		httpData << "{\"name\":\"" << exchange << "\"\
-			,\"type\":\"" << type << "\"}";
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
+		
+		//For debug:
+		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-		Json::Value json;
-		Json::CharReaderBuilder jsonReader;
-		std::string err;
 
-		Json::parseFromStream(jsonReader, httpData, &json, &err);
-		
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json);
-		
-		
-		/* Perform the custom request */ 
+
 		auto res = curl_easy_perform(curl);
 
-		/* Check for errors */ 
 		if(res != CURLE_OK)
 			std::cout << res << "curl_easy_perform() failed "<< curl_easy_strerror(res) << std::endl;
 		else
-			std::cout << "exchange declared : " << exchange << std::endl;
+			std::cout << "Exchange declared : " << exchange << std::endl;
+
 
 		curl_easy_cleanup(curl);
 	}
-
 }
 
 void bindExchangeAndQueue(std::string exchange, std::string queue, std::string routingkey)
 {
 
-	curl_global_init(CURL_GLOBAL_ALL);
 	auto curl = curl_easy_init();
 
+	std::string data = "{\"routing_key\":\"" + routingkey + "\"}";
 	if (curl)
 	{
 		std::string url = "http://localhost:15672/api/bindings/%2F/e/" + exchange + "/q/" + queue;
@@ -192,36 +177,23 @@ void bindExchangeAndQueue(std::string exchange, std::string queue, std::string r
 		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl, CURLOPT_USERPWD, "guest:guest");
 
+		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
-		//construct json spec
-		std::stringstream httpData;
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
 
-		//httpData << "[{\"source\":\"my-exchange\",\"vhost\":\"/\",\"destination\":\"my-queue\",\"destination_type\":\"queue\",\"routing_key\":\""<< routingkey <<"\",\"arguments\":{},\"properties_key\":\"~\"}]";
-		httpData << "{\"routing_key\":\"" << routingkey <<"\"\
-			,\"arguments\":\"{\"x-arg\": \"value\"}\"}";
+		//For debug:
+		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-		Json::Value json;
-		Json::CharReaderBuilder jsonReader;
-		std::string err;
 
-		Json::parseFromStream(jsonReader, httpData, &json, &err);
-		
-	//	curl_easy_setopt(curl, CURLOPT_POST, 1);
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json);
-		
-		
-		/* Perform the custom request */ 
 		auto res = curl_easy_perform(curl);
 
-		/* Check for errors */ 
 		if(res != CURLE_OK)
 			std::cout << res << "curl_easy_perform() failed "<< curl_easy_strerror(res) << std::endl;
 		else
-			std::cout << "binded : " << exchange << " " << queue << " " << routingkey << std::endl;
+			std::cout << "Exchange and Queue binded : " << exchange << " " << queue << " " << routingkey << std::endl;
 
 		curl_easy_cleanup(curl);
 	}
-	curl_global_cleanup();
 }
 
 
@@ -236,10 +208,10 @@ int main(void)
 	purgeQueue(queue);
 
 	declareExchange(exchange, "direct");
-//	bindExchangeAndQueue(exchange, queue, "first");
-//	bindExchangeAndQueue(exchange, queue, "second");
+	bindExchangeAndQueue(exchange, queue, "first");
+	bindExchangeAndQueue(exchange, queue, "second");
 
-
+/*
 
 	CURL *curl;
 	size_t nbConsumers = 0;
@@ -268,6 +240,7 @@ int main(void)
 	client1.ClientAsk(&channel1);
                                 
 	ev_run(loop, 0);
+*/
 	return 0;
 }
 /*
