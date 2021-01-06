@@ -49,3 +49,7 @@ The rabbitmqserver must have been started. In a terminal : ``` rabbitmq-server s
 
 for more http management information (once the server is started): http://localhost:15672/api/index.html \
 or : https://www.programmersought.com/article/16382800932/
+
+
+use std::threads :
+https://github.com/CopernicaMarketingSoftware/AMQP-CPP/issues/108

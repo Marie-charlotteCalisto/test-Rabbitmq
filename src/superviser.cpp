@@ -248,44 +248,14 @@ int main(void)
 	auto client1 = Client("my-queue", "my-exchange", "first", "second");
         auto client2 = Client("my-queue", "my-exchange", "second", "first");
 
-/*	std::thread client1(Client, "my-queue", "my-exchange", );
-	std::thread client2(client1);
-
-	client1.join();
-	client2.join();
-
-*/
 	std::thread pub(publishMessage, exchange, "first");
 
+	std::thread clientThr1(Client::RespondAdditionMessage, client1);
+	std::thread clientThr2(Client::RespondAdditionMessage, client2);
+
 	pub.join();
-
-	struct ev_loop *loop = EV_DEFAULT;
-                                                                    
-	AMQP::LibEvHandler myhandler(loop);
-
-
-	//client1
-
-        AMQP::Address adress1("amqp://guest:guest@localhost/");        
-        AMQP::TcpConnection connection1(&myhandler, adress1);
-        AMQP::TcpChannel channel1(&connection1);                        
-
-	client1.RespondAdditionMessage(&channel1);
-         
-
-
-       	//client2
-
-        AMQP::Address adress2("amqp://guest:guest@localhost/");        
-        AMQP::TcpConnection connection2(&myhandler, adress2);           
-        AMQP::TcpChannel channel2(&connection2);                        
-
-	client2.RespondAdditionMessage(&channel2);
-
-	
-	                       
-	ev_run(loop, 0);
-
+	clientThr1.join();
+	clientThr2.join();
 	return 0;
 }
 /*

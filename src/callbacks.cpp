@@ -1,8 +1,8 @@
 #include "callbacks.h"
 #include "client.h"
 
-//#include "thread"
-//#include "chrono"
+#include "thread"
+#include "chrono"
 
 const AMQP::MessageCallback AdditionMessage(
 		AMQP::TcpChannel *channel,
@@ -31,8 +31,7 @@ const AMQP::MessageCallback AdditionMessage(
 
 		//publish after one second
 		channel->publish(client->getExchange(), client->getPublishkey(), std::to_string(messageS));
-		usleep(1000000);
-	//	std::this_thread::sleep_for(std::chrono::seconds(1));
+		std::this_thread::sleep_for(std::chrono::seconds(1));
 	};
 };
 
