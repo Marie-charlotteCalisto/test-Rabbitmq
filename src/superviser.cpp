@@ -7,6 +7,7 @@
 #include <json/json.h>
 #include <unistd.h>
 #include <map>
+#include "thread"
 
 
 static size_t WriteCallback(
@@ -196,6 +197,39 @@ void bindExchangeAndQueue(std::string exchange, std::string queue, std::string r
 	}
 }
 
+void publishMessage(std::string exchange, std::string publishkey)
+{
+
+	auto curl = curl_easy_init();
+
+	std::string data = "{\"properties\":{},\"routing_key\":\"" + publishkey + "\",\"payload\":\"0\",\"payload_encoding\":\"string\"}";
+	if (curl)
+	{
+		std::string url = "http://localhost:15672/api/exchanges/%2F/" + exchange + "/publish";
+
+		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(curl, CURLOPT_USERPWD, "guest:guest");
+
+		curl_easy_setopt(curl, CURLOPT_POST, 1L);
+
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
+
+		//For debug:
+	//	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+
+
+		auto res = curl_easy_perform(curl);
+
+		
+		if(res != CURLE_OK)
+			std::cout << res << "curl_easy_perform() failed "<< curl_easy_strerror(res) << std::endl;
+		else
+			std::cout << " published" << std::endl;
+
+		curl_easy_cleanup(curl);
+	}
+
+}
 
 
 int main(void)
@@ -211,39 +245,53 @@ int main(void)
 	bindExchangeAndQueue(exchange, queue, "first");
 	bindExchangeAndQueue(exchange, queue, "second");
 
-/*
-
-	CURL *curl;
-	size_t nbConsumers = 0;
-
-	std::map<std::string, size_t> queues;
-	
 	auto client1 = Client("my-queue", "my-exchange", "first", "second");
         auto client2 = Client("my-queue", "my-exchange", "second", "first");
+
+/*	std::thread client1(Client, "my-queue", "my-exchange", );
+	std::thread client2(client1);
+
+	client1.join();
+	client2.join();
+
+*/
+	std::thread pub(publishMessage, exchange, "first");
+
+	pub.join();
 
 	struct ev_loop *loop = EV_DEFAULT;
                                                                     
 	AMQP::LibEvHandler myhandler(loop);
-       	//client2
-        AMQP::Address adress2("amqp://guest:guest@localhost/");        
-        AMQP::TcpConnection connection2(&myhandler, adress2);           
-        AMQP::TcpChannel channel2(&connection2);                        
 
-	client2.ClientRespond(&channel2);
 
-                                          
 	//client1
+
         AMQP::Address adress1("amqp://guest:guest@localhost/");        
         AMQP::TcpConnection connection1(&myhandler, adress1);
         AMQP::TcpChannel channel1(&connection1);                        
 
-	client1.ClientAsk(&channel1);
-                                
+	client1.RespondAdditionMessage(&channel1);
+         
+
+
+       	//client2
+
+        AMQP::Address adress2("amqp://guest:guest@localhost/");        
+        AMQP::TcpConnection connection2(&myhandler, adress2);           
+        AMQP::TcpChannel channel2(&connection2);                        
+
+	client2.RespondAdditionMessage(&channel2);
+
+	
+	                       
 	ev_run(loop, 0);
-*/
+
 	return 0;
 }
 /*
+ 	CURL *curl;
+	size_t nbConsumers = 0;
+	std::map<std::string, size_t> queues;
 	//while (true)
 	//{
 		curl = curl_easy_init();
