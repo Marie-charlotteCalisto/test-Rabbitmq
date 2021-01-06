@@ -1,16 +1,16 @@
 #include "callbacks.h"
+#include "client.h"
 
 const AMQP::MessageCallback AdditionMessage(
 		AMQP::TcpChannel *channel,
-		std::string routingkey,
-		std::string publishkey)
+		Client *client)
 {
-	return [channel, routingkey, publishkey](
+	return [channel, client](
 		const AMQP::Message &message, uint64_t deliveryTag,
 		bool redelivered)
 	{
 		auto key = message.routingkey();
-		if (key != routingkey)
+		if (key != client->getRoutingkey())
 			return;
 
 		// acknowledge the message
@@ -24,21 +24,7 @@ const AMQP::MessageCallback AdditionMessage(
 			<< " key " << key << " :\"" << messageS << "\"" << std::endl;
 
 		//publish after one second
-		channel->publish("my-exchange", publishkey, std::to_string(messageS));
-		usleep(1000000);
-	};
-};
-
-const AMQP::SuccessCallback bindAndSend(
-		AMQP::TcpChannel *channel,
-		std::string publishkey)
-{
-	return [channel, publishkey] ()
-	{
-		std::cout << "binded" << std::endl;
-
-		//publish first message to begin conversation
-		channel->publish("my-exchange", publishkey, "0");
+		channel->publish(client->getExchange(), client->getPublishkey(), std::to_string(messageS));
 		usleep(1000000);
 	};
 };
