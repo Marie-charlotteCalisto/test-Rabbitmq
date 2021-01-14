@@ -5,8 +5,7 @@
 
 
 class Client {
-	//private:
-	public:
+	private:
 		std::string queue;
 		std::string exchange;
 		std::string routingkey;
@@ -23,6 +22,7 @@ class Client {
 
 
 		static void RespondAdditionMessage(Client client);
+		void publish(std::string message);
 
 		std::string getQueue() { return queue;}
 		std::string getExchange() { return exchange;}
