@@ -1,6 +1,7 @@
 #include "callbacks.h"
 #include "client.h"
 
+#include <vector>
 #include <iostream>
 #include <string>
 #include <curl/curl.h>
@@ -10,286 +11,87 @@
 #include "thread"
 
 
-static size_t WriteCallback(
-		const char* in,
-		std::size_t size,
-		std::size_t num,
-		char* out)
+void supervisor(std::vector<std::string> queues)
 {
-	std::string data(in, (std::size_t) size * num);
-	*((std::stringstream*) out) << data;
-	return size * num;        
-}
+    while (true)
+    {
+        auto *loop = ev_loop_new();
 
-Json::Value getJsonConsumers(CURL *curl, std::map<std::string, size_t> *queues)
-{
-	CURLcode res;
-	std::string readBuffer;
+        //update number of consumers every 5 seconds
 
-	long httpCode(0);
+        AMQP::LibEvHandler myhandler(loop);
 
-	std::stringstream httpData;
+        AMQP::Address adress("amqp://guest:guest@localhost/");
+        AMQP::TcpConnection connection(&myhandler, adress);
+        AMQP::TcpChannel channel(&connection);
 
-	//Set url for consumer list
-	curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:15672/api/consumers");
-	curl_easy_setopt(curl, CURLOPT_USERPWD, "guest:guest");
-
-	//write data to stringstream (to be parse to json)
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &httpData);
-
-	res = curl_easy_perform(curl);
-
-	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
-
-	if (res == CURLE_OK && httpCode == 200)
-	{
-		//Get json data from string
-		Json::Value jsonData;
-		Json::CharReaderBuilder jsonReader;
-		std::string err;
-
-		if (Json::parseFromStream(jsonReader, httpData, &jsonData, &err))
-		{
-			queues->clear();
-			(*queues)["my-queue"] = 0;
-			(*queues)["second-queue"] = 0;
-
-			for (int i = 0; i < jsonData.size(); i++)
-			{
-				std::string queueName = jsonData[i]["queue"]["name"].asString();
-				(*queues)[queueName] += 1;
-			}
-			return jsonData;
-		}
-	} 
-	return Json::Value::null;
+        for (auto queue : queues) 
+        {
+            channel.declareQueue(queue)
+                .onSuccess(displayNbConsumer(&connection, queue)); //close connection
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+        ev_run(loop, 0);
+    }
 
 }
 
-void purgeQueue(std::string queueName)
+void init_all(std::vector<std::string> queues, std::vector<std::string> exchanges)
 {
-	auto curl = curl_easy_init();
+    struct ev_loop *loop = ev_loop_new();
+    AMQP::LibEvHandler myhandler(loop);
+
+    AMQP::Address adress("amqp://guest:guest@localhost/");
+    AMQP::TcpConnection connection(&myhandler, adress);
+    AMQP::TcpChannel channel(&connection);
+
+    for (auto queue : queues)
+    {
+        channel.declareQueue(queue);
+    }
 
 
-	if (curl)
-	{
-		std::string url = "http://localhost:15672/api/queues/%2F/" + queueName + "/contents";
+    for (auto exchange : exchanges)
+    {
+        channel.declareExchange(exchange, AMQP::direct);
+    }
+    connection.close();
 
-		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(curl, CURLOPT_USERPWD, "guest:guest");
-
-		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-	
-		//For debug:
-		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
-
-		auto res = curl_easy_perform(curl);
-		if(res != CURLE_OK)
-			std::cout << "curl_easy_perform() failed "<< curl_easy_strerror(res) << std::endl;
-		else
-			std::cout << "purged" << std::endl;
-		
-		curl_easy_cleanup(curl);
-	}
-	usleep(100);
-}
-
-void declareQueue(std::string queue)
-{
-	auto curl = curl_easy_init();
-
-
-	std::string data = "{\"name\":\"" + queue + "\",\
-			\"auto_delete\":\"true\",\
-			\"node\":\"guest@localhost\"}";
-	if (curl)
-	{
-		std::string url = "http://localhost:15672/api/queues/%2F/" + queue;
-
-		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(curl, CURLOPT_USERPWD, "guest:guest");
-
-		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
-
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
-			
-		//For debug:
-		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
-
-		auto res = curl_easy_perform(curl);
-
-		if(res != CURLE_OK)
-			std::cout << res << "curl_easy_perform() failed "<< curl_easy_strerror(res) << std::endl;
-		else
-			std::cout << "queue declared : " << queue << std::endl;
-
-		curl_easy_cleanup(curl);
-	}
-
-}
-
-void declareExchange(std::string exchange, std::string type)
-{
-	auto curl = curl_easy_init();
-
-	std::string data = "{\"name\":\"" + exchange + "\",\"type\":\"" + type + "\"}";
-
-	if (curl)
-	{
-		std::string url = "http://localhost:15672/api/exchanges/%2F/" + exchange;
-
-		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(curl, CURLOPT_USERPWD, "guest:guest");
-
-		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
-
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
-		
-		//For debug:
-		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
-
-
-		auto res = curl_easy_perform(curl);
-
-		if(res != CURLE_OK)
-			std::cout << res << "curl_easy_perform() failed "<< curl_easy_strerror(res) << std::endl;
-		else
-			std::cout << "Exchange declared : " << exchange << std::endl;
-
-
-		curl_easy_cleanup(curl);
-	}
-}
-
-void bindExchangeAndQueue(std::string exchange, std::string queue, std::string routingkey)
-{
-
-	auto curl = curl_easy_init();
-
-	std::string data = "{\"routing_key\":\"" + routingkey + "\"}";
-	if (curl)
-	{
-		std::string url = "http://localhost:15672/api/bindings/%2F/e/" + exchange + "/q/" + queue;
-
-		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(curl, CURLOPT_USERPWD, "guest:guest");
-
-		curl_easy_setopt(curl, CURLOPT_POST, 1L);
-
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
-
-		//For debug:
-		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
-
-		auto res = curl_easy_perform(curl);
-
-		if(res != CURLE_OK)
-			std::cout << res << "curl_easy_perform() failed "<< curl_easy_strerror(res) << std::endl;
-		else
-			std::cout << "Exchange and Queue binded : " << exchange << " " << queue << " " << routingkey << std::endl;
-
-		curl_easy_cleanup(curl);
-	}
-}
-
-void publishMessage(std::string exchange, std::string publishkey)
-{
-
-	auto curl = curl_easy_init();
-
-	std::string data = "{\"properties\":{},\"routing_key\":\"" + publishkey + "\",\"payload\":\"0\",\"payload_encoding\":\"string\"}";
-	if (curl)
-	{
-		std::string url = "http://localhost:15672/api/exchanges/%2F/" + exchange + "/publish";
-
-		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(curl, CURLOPT_USERPWD, "guest:guest");
-
-		curl_easy_setopt(curl, CURLOPT_POST, 1L);
-
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
-
-		//For debug:
-	//	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
-
-		auto res = curl_easy_perform(curl);
-
-		
-		if(res != CURLE_OK)
-			std::cout << res << "curl_easy_perform() failed "<< curl_easy_strerror(res) << std::endl;
-		else
-			std::cout << " published" << std::endl;
-
-		curl_easy_cleanup(curl);
-	}
+    ev_run(loop);
 
 }
 
 
 int main(void)
 {
+    std::string queue1 = "my-queue";
+    std::string exchange = "my-exchange";
+    std::string queue2 = "my-queue2";
 
-	std::string queue = "my-queue";
-	std::string exchange = "my-exchange";
 
-	declareQueue(queue);
-	purgeQueue(queue);
+    std::vector<std::string> queues {queue1, queue2};
+    std::vector<std::string> exchanges{exchange};
 
-	declareExchange(exchange, "direct");
-	bindExchangeAndQueue(exchange, queue, "first");
-	bindExchangeAndQueue(exchange, queue, "second");
+    std::thread sup(supervisor, queues);
 
-	auto client1 = Client("my-queue", "my-exchange", "first", "second");
-        auto client2 = Client("my-queue", "my-exchange", "second", "first");
+    //first discution
+    auto client1 = Client(queue1, exchange, "first", "second");
+    auto client2 = Client(queue1, exchange, "second", "first");
 
-	std::thread pub(publishMessage, exchange, "first");
+    //second discution
+    auto client3 = Client(queue2, exchange, "third", "forth");
+    auto client4 = Client(queue2, exchange, "forth", "third");
 
-	std::thread clientThr1(Client::RespondAdditionMessage, client1);
-	std::thread clientThr2(Client::RespondAdditionMessage, client2);
+    client1.publish("0");
+    client3.publish("0");
 
-	pub.join();
-	clientThr1.join();
-	clientThr2.join();
-	return 0;
-}
-/*
- 	CURL *curl;
-	size_t nbConsumers = 0;
-	std::map<std::string, size_t> queues;
-	//while (true)
-	//{
-		curl = curl_easy_init();
-		if(curl) {
-			auto JsonConsumers = getJsonConsumers(curl, &queues);
-			auto NewnbConsumers = JsonConsumers.size();
-			if (nbConsumers != NewnbConsumers)
-			{
-				if (nbConsumers > NewnbConsumers)
-				{
-					for (auto it = queues.begin(); it != queues.end(); it++)
-					{
-						if (it->second == 0)
-						{
-							std::cout << it->first << " " << it->second << std::endl;
-							purgeQueue(it->first);
-						}
-					}
 
-				}
-				nbConsumers = NewnbConsumers;
-				std::cout << "There is " << nbConsumers << " consumer" << std::endl;
-			}
+    std::thread clientThr3(Client::RespondAdditionMessage, client3);
+    std::thread clientThr4(Client::RespondAdditionMessage, client4);
 
-			curl_easy_cleanup(curl);
-		}
+    std::thread clientThr1(Client::RespondAdditionMessage, client1);
+    std::thread clientThr2(Client::RespondAdditionMessage, client2);
+    sup.join();
 
-	//	usleep(1000000);
-	return 0;
-}
-*/
+    return 0;
+}               
